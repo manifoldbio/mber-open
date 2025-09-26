@@ -1,0 +1,14 @@
+name: mber
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python>=3.11
+  - pip
+  - openmm==8.0.0
+  - pdbfixer==1.9
+  - anarci
+  - ffmpeg
+  - pip:
+    - -e . --index-url https://download.pytorch.org/whl/cu128 # mBER has been tested on CUDA 12.8, but should work on older versions with certain hardware.

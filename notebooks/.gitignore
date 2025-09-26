@@ -1,0 +1,5 @@
+*.pdb
+example_outputs
+tmp
+
+!example_data/*.pdb
