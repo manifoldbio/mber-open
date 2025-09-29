@@ -170,6 +170,9 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--max-trajectories", type=int, default=DEFAULT_MAX_TRAJ, help=f"Max trajectories to attempt (default {DEFAULT_MAX_TRAJ})")
     p.add_argument("--min-iptm", type=float, default=DEFAULT_MIN_IPTM, help=f"Minimum iPTM to accept (default {DEFAULT_MIN_IPTM})")
     p.add_argument("--min-plddt", type=float, default=DEFAULT_MIN_PLDDT, help=f"Minimum pLDDT to accept (default {DEFAULT_MIN_PLDDT})")
+    p.add_argument("--no-animations", action="store_true", help="Skip saving animated trajectory HTML files to save space")
+    p.add_argument("--no-pickle", action="store_true", help="Skip saving design_state.pickle files to save space")
+    p.add_argument("--no-png", action="store_true", help="Skip saving PNG plots (e.g., pssm_logits.png) to save space")
     p.add_argument("--interactive", action="store_true", help="Prompt for required values with defaults shown")
     return p.parse_args()
 
@@ -194,9 +197,13 @@ def _collect_interactive() -> Dict[str, Any]:
     max_traj = _prompt(f"Maximum number of trajectories (default {DEFAULT_MAX_TRAJ})", str(DEFAULT_MAX_TRAJ))
     min_iptm = _prompt(f"Minimum iPTM threshold (default {DEFAULT_MIN_IPTM})", str(DEFAULT_MIN_IPTM))
     min_plddt = _prompt(f"Minimum pLDDT threshold (default {DEFAULT_MIN_PLDDT})", str(DEFAULT_MIN_PLDDT))
+    
+    skip_animations = _prompt("Skip saving animations? (y/N)", "N").lower() in ("y", "yes")
+    skip_pickle = _prompt("Skip saving pickle files? (y/N)", "N").lower() in ("y", "yes")
+    skip_png = _prompt("Skip saving PNG plots? (y/N)", "N").lower() in ("y", "yes")
 
     cfg: Dict[str, Any] = {
-        "output": {"dir": output_dir},
+        "output": {"dir": output_dir, "skip_animations": skip_animations, "skip_pickle": skip_pickle, "skip_png": skip_png},
         "target": {"pdb": input_pdb, "name": target_name or None, "chains": chains, "hotspots": hotspots or None},
         "stopping": {"num_accepted": int(num_accepted), "max_trajectories": int(max_traj)},
         "filters": {"min_iptm": float(min_iptm), "min_plddt": float(min_plddt)},
@@ -210,7 +217,12 @@ def _merge_flags_into_cfg(args: argparse.Namespace) -> Optional[Dict[str, Any]]:
     if not (args.input_pdb and args.output_dir and args.chains):
         return None
     cfg: Dict[str, Any] = {
-        "output": {"dir": args.output_dir},
+        "output": {
+            "dir": args.output_dir,
+            "skip_animations": args.no_animations,
+            "skip_pickle": args.no_pickle,
+            "skip_png": args.no_png,
+        },
         "target": {
             "pdb": args.input_pdb,
             "name": args.target_name,
@@ -235,7 +247,8 @@ def _load_cfg_from_settings(path: str) -> Dict[str, Any]:
 
 
 def _build_state_from_cfg(cfg: Dict[str, Any]) -> Dict[str, Any]:
-    out_dir = cfg["output"]["dir"]
+    out_cfg = cfg["output"]
+    out_dir = out_cfg["dir"]
     tgt = cfg["target"]
     binder = cfg.get("binder", {})
     stopping = cfg.get("stopping", {})
@@ -272,6 +285,9 @@ def _build_state_from_cfg(cfg: Dict[str, Any]) -> Dict[str, Any]:
         "max_trajectories": max_trajectories,
         "min_iptm": min_iptm,
         "min_plddt": min_plddt,
+        "skip_animations": out_cfg.get("skip_animations", False),
+        "skip_pickle": out_cfg.get("skip_pickle", False),
+        "skip_png": out_cfg.get("skip_png", False),
         "state": state,
     }
 
@@ -325,11 +341,18 @@ def _accept_binders(state: DesignState, min_iptm: float, min_plddt: float) -> Di
     return accepted
 
 
-def _save_run_state(output_dir: str, state: DesignState) -> str:
+def _save_run_state(output_dir: str, state: DesignState, skip_animations: bool = False, skip_pickle: bool = False, skip_png: bool = False) -> str:
     traj_name = state.trajectory_data.trajectory_name or "trajectory"
     run_dir = os.path.join(output_dir, "runs", traj_name)
     _ensure_dir(run_dir)
-    state.to_dir(run_dir)
+    # Save the state with gating to avoid writing unwanted files
+    state.to_dir(
+        run_dir,
+        save_pickle=not skip_pickle,
+        save_png=not skip_png,
+        save_animations=not skip_animations,
+    )
+    
     return run_dir
 
 
@@ -357,6 +380,9 @@ def main() -> None:
     min_iptm = built["min_iptm"]
     min_plddt = built["min_plddt"]
     state: DesignState = built["state"]
+    skip_animations = built["skip_animations"]
+    skip_pickle = built["skip_pickle"]
+    skip_png = built["skip_png"]
 
     _ensure_dir(output_dir)
     accepted_csv = os.path.join(output_dir, "accepted.csv")
@@ -387,7 +413,13 @@ def main() -> None:
         traj_count += 1
         run_state = _run_one_trajectory(state)
 
-        run_dir = _save_run_state(output_dir, run_state)
+        run_dir = _save_run_state(
+            output_dir,
+            run_state,
+            skip_animations=skip_animations,
+            skip_pickle=skip_pickle,
+            skip_png=skip_png,
+        )
         traj_name = run_state.trajectory_data.trajectory_name or f"traj_{traj_count}"
 
         accepted = _accept_binders(run_state, min_iptm=min_iptm, min_plddt=min_plddt)
