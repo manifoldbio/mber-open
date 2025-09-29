@@ -146,7 +146,7 @@ def _parse_args() -> argparse.Namespace:
         ),
     )
     p.add_argument("--settings", "-s", help="Path to YAML or JSON settings file")
-    p.add_argument("--input-pdb", help="Path/ID of target (local PDB, PDB code, UniProt ID, or s3://...") )
+    p.add_argument("--input-pdb", help="Path/ID of target (local PDB, PDB code, UniProt ID, or s3://...")
     p.add_argument("--output-dir", help="Output directory")
     p.add_argument("--chains", help="Target chains, e.g. 'A' or 'A,B'")
     p.add_argument("--hotspots", help="Optional hotspots, e.g. 'A56' or 'A56,B20'", default=None)
