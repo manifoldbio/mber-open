@@ -1,6 +1,6 @@
 # mber - Manifold Binder Engineering and Refinement
 
-An open-source protein design framework building on ColabDesign. mBER enables format specific binder design by leveraging structure templates and sequence conditioning in backprop design through AlphaFold-Multimer.
+An open-source protein design framework for antibody binder design. mBER enables format specific binder design by leveraging structure templates and sequence conditioning in backprop design through AlphaFold-Multimer.
 
 ## Graphical Abstract
 
