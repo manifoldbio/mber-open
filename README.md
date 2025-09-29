@@ -2,6 +2,7 @@
 
 An open-source protein design framework for antibody binder design. mBER enables format specific binder design by leveraging structure templates and sequence conditioning in backprop design through AlphaFold-Multimer.
 
+Preprint with experimental validation: [https://www.biorxiv.org/content/10.1101/2025.09.26.678877v1](https://www.biorxiv.org/content/10.1101/2025.09.26.678877v1)
 ## Graphical Abstract
 
 ![Graphical Abstract](./assets/mBER_graphical_abstract.png)
@@ -60,7 +61,19 @@ MIT License - See the LICENSE file for details.
 
 If you use this code in your research, please cite our paper:
 
-[Paper citation to be added]
+```
+@article {swanson2025mber,
+	author = {Swanson, Erik and Nichols, Michael and Ravichandran, Supriya and Ogden, Pierce},
+	title = {mBER: Controllable de novo antibody design with million-scale experimental screening},
+	elocation-id = {2025.09.26.678877},
+	year = {2025},
+	doi = {10.1101/2025.09.26.678877},
+	publisher = {Cold Spring Harbor Laboratory},
+	URL = {https://www.biorxiv.org/content/early/2025/09/28/2025.09.26.678877},
+	eprint = {https://www.biorxiv.org/content/early/2025/09/28/2025.09.26.678877.full.pdf},
+	journal = {bioRxiv}
+}
+```
 
 ## Acknowledgements
 
