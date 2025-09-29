@@ -183,6 +183,13 @@ def _prompt(text: str, default: Optional[str] = None) -> str:
     return resp if resp else (default or "")
 
 
+def _isatty_stdin() -> bool:
+    try:
+        return sys.stdin.isatty()
+    except Exception:
+        return False
+
+
 def _collect_interactive() -> Dict[str, Any]:
     print("\nMBER VHH Interactive Setup\n")
     input_pdb = _prompt("Enter path/ID to target PDB", None)
@@ -365,13 +372,17 @@ def main() -> None:
         cfg = _collect_interactive()
     else:
         flags_cfg = _merge_flags_into_cfg(args)
-        if flags_cfg is None:
+        if flags_cfg is None and _isatty_stdin():
+            print("\nMissing required flags and no --settings provided. Entering interactive mode...\n")
+            cfg = _collect_interactive()
+        elif flags_cfg is None:
             print(
-                "Error: provide --settings PATH or use required flags --input-pdb, --output-dir, --chains (or use --interactive).",
+                "Error: provide --settings PATH or use required flags --input-pdb, --output-dir, --chains (run in a TTY to be prompted).",
                 file=sys.stderr,
             )
             sys.exit(2)
-        cfg = flags_cfg
+        else:
+            cfg = flags_cfg
 
     built = _build_state_from_cfg(cfg)
     output_dir = built["output_dir"]
