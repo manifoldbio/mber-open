@@ -28,6 +28,7 @@ When not using `--settings`, three flags are required: `--input-pdb`, `--output-
 mber-vhh \
   --input-pdb ./protocols/src/mber_protocols/examples/PDL1.pdb \
   --output-dir ./output/vhh_pdl1_A56 \
+  --target-name PDL1 \
   --chains A \
   --hotspots A56 \
   --num-accepted 100 \
@@ -36,7 +37,7 @@ mber-vhh \
   --min-plddt 0.70
 ```
 - Required (if not using `--settings`): `--input-pdb`, `--output-dir`, `--chains`
-- Optional (defaults in parentheses): `--hotspots` (none), `--num-accepted` (100), `--max-trajectories` (10000), `--min-iptm` (0.75), `--min-plddt` (0.70)
+- Optional (defaults in parentheses): `--target-name` (PDB filename stem), `--hotspots` (none), `--num-accepted` (100), `--max-trajectories` (10000), `--min-iptm` (0.75), `--min-plddt` (0.70)
 
 ### Option 3: Interactive mode
 Prompts for the same inputs with defaults shown:
@@ -56,8 +57,12 @@ output:
   dir: /abs/path/out
 target:
   pdb: /abs/path/target.pdb          # or PDB code, UniProt ID, s3://...
+  name: PDL1                         # optional; defaults to PDB filename stem
   chains: "A"                        # e.g., "A" or "A,B"
   hotspots: ["A56"]                  # optional; omit or [] to bind anywhere
+binder:
+  # Optional: customize VHH framework with masked CDRs (use '*' for design positions)
+  # masked_sequence: "EVQLVESGGGLVQPGGSLRLSCAASG*********WFRQAPGKEREF***********NADSVKGRFTISRDNAKNTLYLQMNSLRAEDTAVYYC************WGQGTLVTVSS"
 stopping:
   num_accepted: 100
   max_trajectories: 10000

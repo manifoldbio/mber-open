@@ -77,6 +77,21 @@ def _write_csv_header(csv_path: str) -> None:
         ])
 
 
+def _count_existing_accepted(csv_path: str) -> int:
+    """Count the number of existing accepted designs in the CSV."""
+    if not os.path.exists(csv_path):
+        return 0
+    try:
+        with open(csv_path, "r", newline="") as f:
+            reader = csv.reader(f)
+            # Skip header
+            next(reader, None)
+            # Count rows
+            return sum(1 for _ in reader)
+    except Exception:
+        return 0
+
+
 def _save_accepted_pdbs(
     output_dir: str,
     trajectory_name: str,
@@ -148,6 +163,7 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--settings", "-s", help="Path to YAML or JSON settings file")
     p.add_argument("--input-pdb", help="Path/ID of target (local PDB, PDB code, UniProt ID, or s3://...")
     p.add_argument("--output-dir", help="Output directory")
+    p.add_argument("--target-name", help="Optional target name (defaults to PDB filename stem)", default=None)
     p.add_argument("--chains", help="Target chains, e.g. 'A' or 'A,B'")
     p.add_argument("--hotspots", help="Optional hotspots, e.g. 'A56' or 'A56,B20'", default=None)
     p.add_argument("--num-accepted", type=int, default=DEFAULT_NUM_ACCEPTED, help=f"Desired number of accepted designs (default {DEFAULT_NUM_ACCEPTED})")
@@ -171,6 +187,7 @@ def _collect_interactive() -> Dict[str, Any]:
         input_pdb = _prompt("Enter path/ID to target PDB", None)
 
     output_dir = _prompt("Enter output directory", os.path.join(os.getcwd(), "mber_vhh_out"))
+    target_name = _prompt("Enter target name [leave empty to use PDB filename]", "")
     chains = _prompt("Enter target chains (e.g., A or A,B)", "A")
     hotspots = _prompt("Enter hotspot(s) (e.g., A56 or A56,B20) [leave empty for none]", "")
     num_accepted = _prompt(f"Desired number of accepted designs (default {DEFAULT_NUM_ACCEPTED})", str(DEFAULT_NUM_ACCEPTED))
@@ -180,7 +197,7 @@ def _collect_interactive() -> Dict[str, Any]:
 
     cfg: Dict[str, Any] = {
         "output": {"dir": output_dir},
-        "target": {"pdb": input_pdb, "chains": chains, "hotspots": hotspots or None},
+        "target": {"pdb": input_pdb, "name": target_name or None, "chains": chains, "hotspots": hotspots or None},
         "stopping": {"num_accepted": int(num_accepted), "max_trajectories": int(max_traj)},
         "filters": {"min_iptm": float(min_iptm), "min_plddt": float(min_plddt)},
     }
@@ -196,6 +213,7 @@ def _merge_flags_into_cfg(args: argparse.Namespace) -> Optional[Dict[str, Any]]:
         "output": {"dir": args.output_dir},
         "target": {
             "pdb": args.input_pdb,
+            "name": args.target_name,
             "chains": args.chains,
             "hotspots": args.hotspots,
         },
@@ -219,6 +237,7 @@ def _load_cfg_from_settings(path: str) -> Dict[str, Any]:
 def _build_state_from_cfg(cfg: Dict[str, Any]) -> Dict[str, Any]:
     out_dir = cfg["output"]["dir"]
     tgt = cfg["target"]
+    binder = cfg.get("binder", {})
     stopping = cfg.get("stopping", {})
     filters = cfg.get("filters", {})
 
@@ -231,11 +250,17 @@ def _build_state_from_cfg(cfg: Dict[str, Any]) -> Dict[str, Any]:
     min_iptm = float(filters.get("min_iptm", DEFAULT_MIN_IPTM))
     min_plddt = float(filters.get("min_plddt", DEFAULT_MIN_PLDDT))
 
+    # Use provided target name or default to PDB filename stem
+    target_name = tgt.get("name") or str(Path(str(tgt["pdb"]).split("/")[-1]).stem)
+    
+    # Use provided masked sequence or default
+    masked_sequence = binder.get("masked_sequence") or DEFAULT_MASKED_VHH
+    
     state = DesignState(
         template_data=TemplateData(
             target_id=str(tgt["pdb"]),
-            target_name=str(Path(str(tgt["pdb"]).split("/")[-1]).stem),
-            masked_binder_seq=DEFAULT_MASKED_VHH,
+            target_name=target_name,
+            masked_binder_seq=masked_sequence,
             region=region,
             target_hotspot_residues=hotspots,
         )
@@ -337,16 +362,28 @@ def main() -> None:
     accepted_csv = os.path.join(output_dir, "accepted.csv")
     _write_csv_header(accepted_csv)
 
+    # Count existing accepted designs for resume support
+    existing_accepted = _count_existing_accepted(accepted_csv)
+    remaining_needed = max(0, num_accepted - existing_accepted)
+    
+    if existing_accepted > 0:
+        print(f"Found {existing_accepted} existing accepted designs. Need {remaining_needed} more to reach target of {num_accepted}.")
+    
+    if remaining_needed == 0:
+        print(f"Target of {num_accepted} accepted designs already reached. Exiting.")
+        return
+
     print(
         f"Running VHH design: output={output_dir}, chains={state.template_data.region}, hotspots={state.template_data.target_hotspot_residues or 'None'}, "
-        f"num_accepted={num_accepted} (default {DEFAULT_NUM_ACCEPTED}), max_trajectories={max_trajectories} (default {DEFAULT_MAX_TRAJ}), "
+        f"target_accepted={num_accepted}, existing={existing_accepted}, remaining={remaining_needed}, "
+        f"max_trajectories={max_trajectories} (default {DEFAULT_MAX_TRAJ}), "
         f"min_iptm={min_iptm} (default {DEFAULT_MIN_IPTM}), min_plddt={min_plddt} (default {DEFAULT_MIN_PLDDT})"
     )
 
     accepted_count = 0
     traj_count = 0
 
-    while accepted_count < num_accepted and traj_count < max_trajectories:
+    while accepted_count < remaining_needed and traj_count < max_trajectories:
         traj_count += 1
         run_state = _run_one_trajectory(state)
 
@@ -376,13 +413,14 @@ def main() -> None:
                 relaxed_path=saved_paths.get("relaxed"),
             )
             accepted_count += 1
-            if accepted_count >= num_accepted:
+            if accepted_count >= remaining_needed:
                 break
 
         # Prepare a fresh state for next trajectory (new seed handled internally)
         state = DesignState(template_data=run_state.template_data)
 
-    print(f"Accepted designs: {accepted_count} after {traj_count} trajectories. Results in {output_dir}")
+    total_accepted = existing_accepted + accepted_count
+    print(f"Accepted designs: {accepted_count} new + {existing_accepted} existing = {total_accepted} total after {traj_count} trajectories. Results in {output_dir}")
 
 
 if __name__ == "__main__":
