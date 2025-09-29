@@ -34,10 +34,13 @@ mber-vhh \
   --num-accepted 100 \
   --max-trajectories 10000 \
   --min-iptm 0.75 \
-  --min-plddt 0.70
+  --min-plddt 0.70 \
+  --no-animations \
+  --no-pickle \
+  --no-png
 ```
 - Required (if not using `--settings`): `--input-pdb`, `--output-dir`, `--chains`
-- Optional (defaults in parentheses): `--target-name` (PDB filename stem), `--hotspots` (none), `--num-accepted` (100), `--max-trajectories` (10000), `--min-iptm` (0.75), `--min-plddt` (0.70)
+- Optional (defaults in parentheses): `--target-name` (PDB filename stem), `--hotspots` (none), `--num-accepted` (100), `--max-trajectories` (10000), `--min-iptm` (0.75), `--min-plddt` (0.70), `--no-animations` (off), `--no-pickle` (off), `--no-png` (off)
 
 ### Option 3: Interactive mode
 Prompts for the same inputs with defaults shown:
@@ -55,6 +58,10 @@ YAML/JSON with only a few keys; all VHH protocol defaults remain unchanged:
 ```yaml
 output:
   dir: /abs/path/out
+  # Optional space-saving toggles (defaults shown)
+  skip_animations: false
+  skip_pickle: false
+  skip_png: false
 target:
   pdb: /abs/path/target.pdb          # or PDB code, UniProt ID, s3://...
   name: PDL1                         # optional; defaults to PDB filename stem
@@ -70,6 +77,9 @@ filters:
   min_iptm: 0.75
   min_plddt: 0.70
 ```
+
+Resume behavior
+- If `accepted.csv` already has entries, the CLI counts them and only generates the remaining designs to reach `stopping.num_accepted`. If the target is already reached, it exits immediately.
 
 ### Outputs
 Given `output_dir`, the CLI writes:
