@@ -36,7 +36,7 @@ mber has been tested on modern NVIDIA datacenter GPUs, including A10G, A100, L4,
 ```bash
 # Clone the repository
 git clone https://github.com/manifoldbio/mber-open.git
-cd mber
+cd mber-open
 
 # Install conda environment
 conda env create -f environment.yml
