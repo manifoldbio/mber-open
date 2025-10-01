@@ -49,9 +49,11 @@ pip install -e protocols
 bash download_af_weights.sh
 ```
 
-## Quick Start: VHH Binder Design
+## Usage
 
-The easiest way to use mBER is through the `mber-vhh` command-line interface for VHH (nanobody) binder design:
+## Quick Start: VHH Binder Design CLI tool
+
+We provide the `mber-vhh` command-line interface for VHH (nanobody) binder design:
 
 ```bash
 # Run with an example settings file
@@ -70,13 +72,17 @@ mber-vhh --interactive
 
 See [VHH_CLI.md](./VHH_CLI.md) for complete documentation on the CLI, including all available options and settings file format.
 
-## Usage
+## Quick Start: VHH Binder Design Notebooks
 
-See the [notebooks](./notebooks) for examples of how to use mber programmatically.
+See the [notebooks](./notebooks) for examples of how to use mber in a notebook environment.
 
 ## License
 
 MIT License - See the LICENSE file for details.
+
+## Contributing
+
+We welcome contributions to the mber project. Please see the [CONTRIBUTING.md](./CONTRIBUTING.md) file for details on how to contribute.
 
 ## Citation
 
