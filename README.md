@@ -57,11 +57,11 @@ We provide the `mber-vhh` command-line interface for VHH (nanobody) binder desig
 
 ```bash
 # Run with an example settings file
-mber-vhh --settings ./protocols/src/mber_protocols/examples/vhh_settings_example.yml
+mber-vhh --settings ./protocols/src/mber_protocols/stable/VHH_binder_design/examples/vhh_settings_example.yml
 
 # Or use command-line flags
 mber-vhh \
-  --input-pdb ./protocols/src/mber_protocols/examples/PDL1.pdb \
+  --input-pdb ./protocols/src/mber_protocols/stable/VHH_binder_design/examples/PDL1.pdb \
   --output-dir ./output/vhh_pdl1_A56 \
   --chains A \
   --hotspots A56
@@ -70,7 +70,7 @@ mber-vhh \
 mber-vhh --interactive
 ```
 
-See [VHH_CLI.md](./VHH_CLI.md) for complete documentation on the CLI, including all available options and settings file format.
+See [VHH_CLI.md](./protocols/src/mber_protocols/stable/VHH_binder_design/VHH_CLI.md) for complete documentation on the CLI, including all available options and settings file format.
 
 ## Quick Start: VHH Binder Design Notebooks
 
