@@ -26,7 +26,7 @@ setup(
     ],
     entry_points={
         "console_scripts": [
-            "mber-vhh=mber_protocols.cli:main",
+            "mber-vhh=mber_protocols.stable.VHH_binder_design.cli:main",
         ],
     },
 )

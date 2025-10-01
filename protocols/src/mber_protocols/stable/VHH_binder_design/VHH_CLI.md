@@ -16,17 +16,17 @@ bash ./download_af_weights.sh
 ### Option 1: Use the example settings file (recommended)
 An example PDL1 target and settings file are included. You can run them as-is:
 ```bash
-mber-vhh --settings ./protocols/src/mber_protocols/examples/vhh_settings_example.yml
+mber-vhh --settings ./protocols/src/mber_protocols/stable/VHH_binder_design/examples/vhh_settings_example.yml
 ```
 The example references:
-- Target PDB: `./protocols/src/mber_protocols/examples/PDL1.pdb`
+- Target PDB: `./protocols/src/mber_protocols/stable/VHH_binder_design/examples/PDL1.pdb`
 - Output: `./output/vhh_pdl1_A56`
 
 ### Option 2: Flags-only (no file)
 When not using `--settings`, three flags are required: `--input-pdb`, `--output-dir`, `--chains`. All others are optional and have sensible defaults.
 ```bash
 mber-vhh \
-  --input-pdb ./protocols/src/mber_protocols/examples/PDL1.pdb \
+  --input-pdb ./protocols/src/mber_protocols/stable/VHH_binder_design/examples/PDL1.pdb \
   --output-dir ./output/vhh_pdl1_A56 \
   --target-name PDL1 \
   --chains A \
