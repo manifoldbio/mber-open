@@ -3,6 +3,7 @@ from setuptools import setup, find_packages
 
 requirements = [
     "mber>=1.0.0",
+    "pyyaml",
 ]
 
 setup(
@@ -23,4 +24,9 @@ setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
+    entry_points={
+        "console_scripts": [
+            "mber-vhh=mber_protocols.stable.VHH_binder_design.cli:main",
+        ],
+    },
 )

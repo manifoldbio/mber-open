@@ -347,18 +347,28 @@ class DesignState(SerializableDataclass):
 
         return "\n".join(lines)
 
-    def to_dir(self, dir_path: str) -> None:
+    def to_dir(
+        self,
+        dir_path: str,
+        save_pickle: bool = True,
+        save_png: bool = True,
+        save_animations: bool = True,
+    ) -> None:
         """
         Export the design state to a directory structure.
 
         Args:
             dir_path: Path to the directory where data will be stored
+            save_pickle: If False, do not write design_state.pickle
+            save_png: If False, do not write PNG images (e.g., seqlogos)
+            save_animations: If False, do not write animation HTML files
         """
         os.makedirs(dir_path, exist_ok=True)
 
         # Save a pickle of the entire state for easy loading
-        pickle_path = os.path.join(dir_path, "design_state.pickle")
-        self.to_pickle(pickle_path)
+        if save_pickle:
+            pickle_path = os.path.join(dir_path, "design_state.pickle")
+            self.to_pickle(pickle_path)
 
         # Generate YAML summary with key metrics
         yaml_path = os.path.join(dir_path, "design_summary.yaml")
@@ -374,10 +384,22 @@ class DesignState(SerializableDataclass):
             os.makedirs(component_dir, exist_ok=True)
 
             # Handle each component type appropriately
-            self._export_component(component, component_name, component_dir)
+            self._export_component(
+                component,
+                component_name,
+                component_dir,
+                save_png=save_png,
+                save_animations=save_animations,
+            )
 
     def _export_component(
-        self, component: Any, component_name: str, component_dir: str
+        self,
+        component: Any,
+        component_name: str,
+        component_dir: str,
+        *,
+        save_png: bool = True,
+        save_animations: bool = True,
     ) -> None:
         """Export a component to its directory."""
         if not is_dataclass(component):
@@ -403,8 +425,8 @@ class DesignState(SerializableDataclass):
                     f.write(field_value)
                 json_data[field_name] = f"{field_name}.pdb"  # Store file reference
             elif isinstance(field_value, np.ndarray):
-                # If logits, save seqlogo
-                if field_name.endswith("logits") and field_value.ndim == 2:
+                # If logits, optionally save seqlogo
+                if save_png and field_name.endswith("logits") and field_value.ndim == 2:
                     from mber.utils.plotting import generate_seqlogo_from_logits
                     logo_path = os.path.join(component_dir, f"{field_name}.png")
                     generate_seqlogo_from_logits(field_value, logo_path)
@@ -464,11 +486,14 @@ class DesignState(SerializableDataclass):
 
                 json_data[field_name] = binders_json
             elif "animat" in field_name and isinstance(field_value, str):
-                # save as html file
-                animat_path = os.path.join(component_dir, f"{field_name}.html")
-                with open(animat_path, "w") as f:
-                    f.write(field_value)
-                json_data[field_name] = f"{field_name}.html"
+                # Optionally save animation as html file
+                if save_animations:
+                    animat_path = os.path.join(component_dir, f"{field_name}.html")
+                    with open(animat_path, "w") as f:
+                        f.write(field_value)
+                    json_data[field_name] = f"{field_name}.html"
+                else:
+                    json_data[field_name] = None
             else:
                 json_data[field_name] = field_value
 

@@ -1,0 +1,18 @@
+output:
+  dir: ./output/vhh_pdl1_A56
+target:
+  pdb: ./protocols/src/mber_protocols/examples/PDL1.pdb
+  name: PDL1              # optional; defaults to PDB filename stem
+  chains: "A"             # e.g., "A" or "A,B"
+  hotspots: ["A56"]       # optional; omit or [] to bind anywhere
+binder:
+  # Optional: customize the VHH framework with masked CDRs (use '*' for positions to design)
+  # Default shown below; comment out or omit to use default
+  # masked_sequence: "EVQLVESGGGLVQPGGSLRLSCAASG*********WFRQAPGKEREF***********NADSVKGRFTISRDNAKNTLYLQMNSLRAEDTAVYYC************WGQGTLVTVSS"
+stopping:
+  num_accepted: 100        # default 100
+  max_trajectories: 10000  # default 10000
+filters:
+  min_iptm: 0.75           # default 0.75
+  min_plddt: 0.70          # default 0.70
+
