@@ -33,6 +33,7 @@ matplotlib
 numpy
 pandas
 pyarrow
+boto3
 
 # jupyter requirements
 ipywidgets
