@@ -257,7 +257,7 @@ def _build_state_from_cfg(cfg: Dict[str, Any]) -> Dict[str, Any]:
     out_cfg = cfg["output"]
     out_dir = out_cfg["dir"]
     tgt = cfg["target"]
-    binder = cfg.get("binder", {})
+    binder = cfg.get("binder", {}) or {}
     stopping = cfg.get("stopping", {})
     filters = cfg.get("filters", {})
 
