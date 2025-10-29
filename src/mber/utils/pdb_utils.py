@@ -68,13 +68,13 @@ def process_target(target_id: str) -> tuple:
     # Check if it's a UniProt ID
     if len(target_id) >= 6 and target_id.isalnum():
         # Download AlphaFold structure
-        af_url = f"https://alphafold.ebi.ac.uk/files/AF-{target_id}-F1-model_v4.pdb"
+        af_url = f"https://alphafold.ebi.ac.uk/files/AF-{target_id}-F1-model_v6.pdb"
         response = requests.get(af_url)
         if response.status_code == 200:
             pdb_content = response.text
 
             # Also download the PAE file
-            pae_url = f"https://alphafold.ebi.ac.uk/files/AF-{target_id}-F1-predicted_aligned_error_v4.json"
+            pae_url = f"https://alphafold.ebi.ac.uk/files/AF-{target_id}-F1-predicted_aligned_error_v6.json"
             pae_response = requests.get(pae_url)
 
             if pae_response.status_code == 200:
