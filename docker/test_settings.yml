@@ -1,0 +1,26 @@
+# Test settings for Docker AMBER relaxation testing
+# Runs 3 trajectories to test for reproducibility of minimization failures
+# See issue #11: https://github.com/manifoldbio/mber-open/issues/11
+
+output:
+  dir: ./output/docker_test_pdl1
+
+target:
+  pdb: ./examples/PDL1.pdb
+  name: PDL1_docker_test
+  chains: "A"
+  hotspots: ["A56"]
+
+binder:
+  # Use default VHH framework - same as user in issue #11
+  # masked_sequence: "EVQLVESGGGLVQPGGSLRLSCAASG*********WFRQAPGKEREF***********NADSVKGRFTISRDNAKNTLYLQMNSLRAEDTAVYYC************WGQGTLVTVSS"
+
+stopping:
+  # Run 3 trajectories to test reproducibility
+  # This is enough to detect intermittent failures while keeping test time reasonable
+  num_accepted: 3
+  max_trajectories: 3
+
+filters:
+  min_iptm: 0.75
+  min_plddt: 0.70

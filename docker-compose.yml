@@ -1,0 +1,64 @@
+# Docker Compose for mber AMBER relaxation testing
+# Tests both GPU and CPU modes to reproduce issue #11
+#
+# Usage:
+#   docker compose build                    # Build the image
+#   docker compose run mber-gpu             # Run with GPU AMBER relaxation
+#   docker compose run mber-cpu             # Run with CPU AMBER relaxation
+#   docker compose run mber-diagnostic      # Run diagnostic tests only
+
+services:
+  # Main GPU test - runs 3 trajectories with CUDA AMBER relaxation
+  mber-gpu:
+    build: .
+    image: mber-test:latest
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - MBER_AMBER_USE_GPU=true
+    volumes:
+      - ./output:/workspace/mber-open/output
+      - mber-af-weights:/root/.mber
+    command: ["mber-vhh", "--settings", "./docker/test_settings.yml"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # CPU-only test - runs 3 trajectories with CPU AMBER relaxation
+  mber-cpu:
+    build: .
+    image: mber-test:latest
+    environment:
+      - CUDA_VISIBLE_DEVICES=""
+      - MBER_AMBER_USE_GPU=false
+    volumes:
+      - ./output:/workspace/mber-open/output
+      - mber-af-weights:/root/.mber
+    command: ["mber-vhh", "--settings", "./docker/test_settings.yml"]
+
+  # Diagnostic test - runs AMBER relaxation tests only
+  mber-diagnostic:
+    build: .
+    image: mber-test:latest
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+    volumes:
+      - ./output:/workspace/mber-open/output
+      - mber-af-weights:/root/.mber
+    command: ["python", "./docker/test_amber_relax.py"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+# Named volume for AlphaFold weights to persist across runs
+volumes:
+  mber-af-weights:

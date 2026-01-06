@@ -1,0 +1,15 @@
+# Docker-specific environment file for mber
+# Uses only conda-forge and bioconda (no defaults channel)
+# This avoids Anaconda ToS requirements
+# NOTE: pip packages are installed separately in Dockerfile after source is copied
+name: mber
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python>=3.11
+  - pip
+  - openmm==8.0.0
+  - pdbfixer==1.9
+  - anarci
+  - ffmpeg
