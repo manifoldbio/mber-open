@@ -27,6 +27,7 @@ Each module is designed to be modular and configurable, with sensible defaults t
 
 - [Protocols Guide](./protocols/README.md) - How to create and use protocols
 - [Core Components](./src/mber/core/README.md) - Documentation of core functionality
+- [Docker Guide](./docker/README.md) - Run mBER in a container with GPU support
 - [Example Notebooks](./notebooks) - Jupyter notebooks demonstrating usage
 
 ## Installation
@@ -45,9 +46,13 @@ conda activate mber
 # Install mber-protocols (contains the VHH binder design protocol)
 pip install -e protocols
 
-# Download AlphaFold2 weights
-bash download_af_weights.sh
+# Download model weights (~9GB: AlphaFold2, NanoBodyBuilder2, ESM2)
+bash download_weights.sh
 ```
+
+### Docker
+
+For containerized usage with GPU support, see the [Docker guide](./docker/README.md).
 
 ## Usage
 

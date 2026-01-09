@@ -8,9 +8,9 @@ This guide shows how to run the VHH binder design protocol using a simple CLI, e
 # from repo root
 pip install -e protocols
 ```
-- Download AlphaFold params (if not already):
+- Download model weights (~9GB):
 ```bash
-bash ./download_af_weights.sh
+bash download_weights.sh
 ```
 
 ### Option 1: Use the example settings file (recommended)

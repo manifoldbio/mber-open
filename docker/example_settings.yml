@@ -1,0 +1,34 @@
+# Example Settings for mBER VHH Binder Design (Docker)
+#
+# Copy this file and modify for your target.
+#
+# Mount points in container:
+#   - Input PDBs: /inputs/
+#   - Outputs: /outputs/
+#
+# Run with:
+#   docker run --gpus all \
+#     -v $(pwd)/output:/outputs \
+#     -v $(pwd)/my_inputs:/inputs:ro \
+#     -v $(pwd)/my_settings.yml:/settings.yml:ro \
+#     mber:latest --settings /settings.yml
+
+output:
+  dir: /outputs/my_design_run
+  skip_animations: true    # Skip HTML animations (saves disk space)
+  skip_pickle: true        # Skip pickle files (saves disk space)
+  skip_png: false          # Keep PNG plots for visualization
+
+target:
+  pdb: /inputs/target.pdb  # Path to your target PDB (inside container)
+  name: my_target          # Name prefix for output files
+  chains: "A"              # Target chain(s) to design binders against
+  hotspots: []             # Optional: specific residues to target, e.g., ["A56", "A100"]
+
+stopping:
+  num_accepted: 100        # Stop after this many successful designs
+  max_trajectories: 10000  # Give up after this many attempts
+
+filters:
+  min_iptm: 0.75           # Minimum interface predicted TM-score
+  min_plddt: 0.70          # Minimum predicted local distance difference test
