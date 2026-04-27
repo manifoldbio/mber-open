@@ -20,7 +20,8 @@ ImmuneBuilder
 # extra MD requirements
 freesasa
 mdtraj
-pdbfixer
+# NOTE: pdbfixer is installed via conda (environment.yml), not pip.
+# Installing it via pip can cause version conflicts with the conda OpenMM.
 
 # pdb and bio requirements
 biopython
@@ -30,7 +31,7 @@ biotite
 # general requirements
 logomaker
 matplotlib
-numpy
+numpy<2
 pandas
 pyarrow
 boto3
