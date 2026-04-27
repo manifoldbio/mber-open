@@ -101,8 +101,12 @@ def _openmm_minimize(
   state = simulation.context.getState(getEnergy=True, getPositions=True)
   ret["einit"] = state.getPotentialEnergy().value_in_unit(ENERGY)
   ret["posinit"] = state.getPositions(asNumpy=True).value_in_unit(LENGTH)
+  # OpenMM 8.4+ expects force units (kJ/nm/mol) or a plain float for tolerance,
+  # not energy units (kcal/mol). Extract the numeric value in kJ/mol which is
+  # accepted by all OpenMM versions as a plain float.
+  tol_value = tolerance.value_in_unit(unit.kilojoules_per_mole)
   simulation.minimizeEnergy(maxIterations=max_iterations,
-                            tolerance=tolerance)
+                            tolerance=tol_value)
   state = simulation.context.getState(getEnergy=True, getPositions=True)
   ret["efinal"] = state.getPotentialEnergy().value_in_unit(ENERGY)
   ret["pos"] = state.getPositions(asNumpy=True).value_in_unit(LENGTH)
