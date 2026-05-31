@@ -59,6 +59,7 @@ class BaseEvaluationModule(BaseModule):
         # Initialize member variables
         self.af_complex_model = None
         self.esm_model = None
+        self.monomer_folding_model = None
         self.pssm_logits = None
 
     @time_method()
@@ -110,38 +111,43 @@ class BaseEvaluationModule(BaseModule):
     @time_method()
     def _setup_models(self, design_state: DesignState) -> None:
         """Initialize models needed for evaluation."""
-        with timer(
-            "Initialize AF complex model",
-            self._log,
-            design_state.evaluation_data.timings,
-        ):
-            self._log("Initializing AlphaFold model for complex evaluation")
-            self.af_complex_model = AFModel(
-                protocol="binder",
-                debug=False,
-                data_dir=self.environment_config.af_params_dir,
-                use_multimer=self.model_config.use_multimer_eval,
-                num_recycles=self.model_config.num_recycles_eval,
-            )
+        if self.af_complex_model is None:
+            with timer(
+                "Initialize AF complex model",
+                self._log,
+                design_state.evaluation_data.timings,
+            ):
+                self._log("Initializing AlphaFold model for complex evaluation")
+                self.af_complex_model = AFModel(
+                    protocol="binder",
+                    debug=False,
+                    data_dir=self.environment_config.af_params_dir,
+                    use_multimer=self.model_config.use_multimer_eval,
+                    num_recycles=self.model_config.num_recycles_eval,
+                )
 
-        with timer(
-            "Initialize ESM model", self._log, design_state.evaluation_data.timings
-        ):
-            self._log("Initializing ESM model for sequence evaluation")
-            self.esm_model = PLM_MODELS[self.evaluation_config.plm_model](device="cpu")
+        if self.esm_model is None:
+            plm_device = "cpu" if self.evaluation_config.plm_force_cpu else "cuda"
+            with timer(
+                "Initialize ESM model", self._log, design_state.evaluation_data.timings
+            ):
+                self._log(f"Initializing ESM model for sequence evaluation on {plm_device}")
+                self.esm_model = PLM_MODELS[self.evaluation_config.plm_model](device=plm_device)
 
         # Add monomer folding model initialization
-        with timer(
-            "Initialize monomer folding model",
-            self._log,
-            design_state.evaluation_data.timings,
-        ):
-            self._log(
-                f"Initializing monomer folding model: {self.evaluation_config.monomer_folding_model}"
-            )
-            self.monomer_folding_model = FOLDING_MODELS[
-                self.evaluation_config.monomer_folding_model
-            ]()
+        if self.monomer_folding_model is None:
+            folding_device = "cpu" if self.evaluation_config.folding_force_cpu else "cuda"
+            with timer(
+                "Initialize monomer folding model",
+                self._log,
+                design_state.evaluation_data.timings,
+            ):
+                self._log(
+                    f"Initializing monomer folding model: {self.evaluation_config.monomer_folding_model} on {folding_device}"
+                )
+                self.monomer_folding_model = FOLDING_MODELS[
+                    self.evaluation_config.monomer_folding_model
+                ](device=folding_device)
 
     @time_method()
     def _fold_monomer(self, design_state: DesignState, binder_seq: str) -> str:
