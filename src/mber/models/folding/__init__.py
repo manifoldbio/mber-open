@@ -5,8 +5,8 @@ from mber.models.folding.esmfold_model import ESMFoldModel
 # from .af2_model import AF2Model
 
 FOLDING_MODELS = {
-    'nbb2': NBB2Model,
-    'abb2': ABB2Model,
-    'esmfold': ESMFoldModel,
+    'nbb2': lambda **kwargs: NBB2Model(**kwargs),
+    'abb2': lambda **kwargs: ABB2Model(**kwargs),
+    'esmfold': lambda **kwargs: ESMFoldModel(**kwargs),
     # 'af2': AF2Model,
 }

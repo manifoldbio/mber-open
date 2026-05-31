@@ -84,13 +84,15 @@ class BaseTemplateModule(BaseModule):
     @time_method()
     def _setup_models(self, design_state: DesignState) -> None:
         """Initialize models needed for template processing."""
+        plm_device = "cpu" if self.template_config.plm_force_cpu else "cuda"
         with timer("Initialize ESM2 model", self._log):
-            self._log(f"Initializing ESM2 model on {self.environment_config.device}")
-            self.esm_model = PLM_MODELS[self.template_config.plm_model](device=self.environment_config.device)
-        
+            self._log(f"Initializing ESM2 model on {plm_device}")
+            self.esm_model = PLM_MODELS[self.template_config.plm_model](device=plm_device)
+
+        folding_device = "cpu" if self.template_config.folding_force_cpu else "cuda"
         with timer("Initialize folding model", self._log, design_state.template_data.timings):
-            self._log(f"Initializing template folding model: {self.template_config.folding_model}")
-            self.folding_model = FOLDING_MODELS[self.template_config.folding_model]()
+            self._log(f"Initializing template folding model: {self.template_config.folding_model} on {folding_device}")
+            self.folding_model = FOLDING_MODELS[self.template_config.folding_model](device=folding_device)
     
     @time_method()
     def _ensure_template_data(self, design_state: DesignState) -> None:
@@ -211,7 +213,15 @@ class BaseTemplateModule(BaseModule):
         # Update template PDB with combined structure
         design_state.template_data.template_pdb = combined_pdb
         design_state.template_data.binder_chain = self.template_config.binder_chain
-        
+
+        # Free memory
+        if self.esm_model is not None:
+            del self.esm_model
+            self.esm_model = None
+            torch.cuda.empty_cache()
+            import gc
+            gc.collect()
+
         return design_state
     
     def _cleanup_temp_directory(self) -> None:

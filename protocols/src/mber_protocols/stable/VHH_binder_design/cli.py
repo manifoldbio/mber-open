@@ -6,6 +6,10 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+# Must be set before JAX is imported (via colabdesign/trajectory/evaluation)
+# to limit JAX GPU pre-allocation and leave room for PyTorch models.
+os.environ["XLA_PYTHON_CLIENT_MEM_FRACTION"] = "0.75"
+
 try:
     import yaml  # type: ignore
     _HAS_YAML = True
@@ -173,6 +177,8 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--no-animations", action="store_true", help="Skip saving animated trajectory HTML files to save space")
     p.add_argument("--no-pickle", action="store_true", help="Skip saving design_state.pickle files to save space")
     p.add_argument("--no-png", action="store_true", help="Skip saving PNG plots (e.g., pssm_logits.png) to save space")
+    p.add_argument("--no-plm-force-cpu", action="store_false", dest="plm_force_cpu", default=True, help="Do not force PLM models (ESM2) to CPU; place on GPU instead")
+    p.add_argument("--no-folding-force-cpu", action="store_false", dest="folding_force_cpu", default=True, help="Do not force folding models to CPU; place on GPU instead")
     p.add_argument("--interactive", action="store_true", help="Prompt for required values with defaults shown")
     return p.parse_args()
 
@@ -299,28 +305,31 @@ def _build_state_from_cfg(cfg: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-def _run_one_trajectory(state: DesignState) -> DesignState:
-    template_cfg = TemplateConfig()
-    model_cfg = ModelConfig()
-    loss_cfg = LossConfig()
-    traj_cfg = TrajectoryConfig()
+def _run_one_trajectory(
+    state: DesignState,
+    traj: TrajectoryModule,
+    ev: EvaluationModule,
+) -> DesignState:
     env_cfg = EnvironmentConfig()
-    eval_cfg = EvaluationConfig()
 
+    # Fresh template module per trajectory: ESM re-samples initial sequence
+    # so each trajectory starts from a different prior
+    template_cfg = TemplateConfig()
     tmpl = TemplateModule(template_cfg, env_cfg)
     tmpl.setup(state)
     state = tmpl.run(state)
     tmpl.teardown(state)
 
-    traj = TrajectoryModule(model_cfg, loss_cfg, traj_cfg, env_cfg)
+    # Reuse trajectory module: AFModel stays alive, JIT cache preserved,
+    # only state is reset via restart() inside _setup_trajectory
     traj.setup(state)
     state = traj.run(state)
     traj.teardown(state)
 
-    ev = EvaluationModule(model_cfg, loss_cfg, eval_cfg, env_cfg)
-    ev.setup(state)
-    state = ev.run(state)
-    ev.teardown(state)
+    if not state.trajectory_data.early_stop:
+        ev.setup(state)
+        state = ev.run(state)
+        ev.teardown(state)
 
     return state
 
@@ -417,12 +426,65 @@ def main() -> None:
         f"min_iptm={min_iptm} (default {DEFAULT_MIN_IPTM}), min_plddt={min_plddt} (default {DEFAULT_MIN_PLDDT})"
     )
 
+    # Create reusable modules once — AFModel instances stay alive across
+    # trajectories, preserving JIT cache and avoiding re-loading parameters.
+    model_cfg = ModelConfig()
+    loss_cfg = LossConfig()
+    traj_cfg = TrajectoryConfig()
+    env_cfg = EnvironmentConfig()
+    eval_cfg = EvaluationConfig()
+    if not_bind:
+        traj_cfg.not_bind_target_positions = not_bind
+        eval_cfg.not_bind_target_positions = not_bind
+
+    if args.rg_weight is not None:
+        loss_cfg.weights_rg = args.rg_weight
+    elif cfg.get("loss", {}).get("rg_weight") is not None:
+        loss_cfg.weights_rg = cfg["loss"]["rg_weight"]
+
+    if args.hotspot_prox_weight is not None:
+        loss_cfg.weights_hotspot_prox = args.hotspot_prox_weight
+    elif cfg.get("loss", {}).get("hotspot_prox_weight") is not None:
+        loss_cfg.weights_hotspot_prox = cfg["loss"]["hotspot_prox_weight"]
+
+    if args.hotspot_prox_sigma is not None:
+        loss_cfg.hotspot_prox_sigma = args.hotspot_prox_sigma
+    elif cfg.get("loss", {}).get("hotspot_prox_sigma") is not None:
+        loss_cfg.hotspot_prox_sigma = cfg["loss"]["hotspot_prox_sigma"]
+
+    # Template config
+    template_cfg = TemplateConfig()
+
+    # PLM force CPU: CLI flag takes precedence, then YAML, then default (True)
+    if not args.plm_force_cpu:
+        template_cfg.plm_force_cpu = False
+        traj_cfg.plm_force_cpu = False
+        eval_cfg.plm_force_cpu = False
+    elif cfg.get("template", {}).get("plm_force_cpu") is not None:
+        template_cfg.plm_force_cpu = cfg["template"]["plm_force_cpu"]
+        traj_cfg.plm_force_cpu = cfg["template"]["plm_force_cpu"]
+        eval_cfg.plm_force_cpu = cfg["template"]["plm_force_cpu"]
+    if cfg.get("evaluation", {}).get("plm_force_cpu") is not None:
+        eval_cfg.plm_force_cpu = cfg["evaluation"]["plm_force_cpu"]
+
+    # Folding force CPU: CLI flag takes precedence, then YAML, then default (True)
+    if not args.folding_force_cpu:
+        template_cfg.folding_force_cpu = False
+        eval_cfg.folding_force_cpu = False
+    elif cfg.get("template", {}).get("folding_force_cpu") is not None:
+        template_cfg.folding_force_cpu = cfg["template"]["folding_force_cpu"]
+        eval_cfg.folding_force_cpu = cfg["evaluation"]["folding_force_cpu"]
+    if cfg.get("evaluation", {}).get("folding_force_cpu") is not None:
+        eval_cfg.folding_force_cpu = cfg["evaluation"]["folding_force_cpu"]
+    traj = TrajectoryModule(model_cfg, loss_cfg, traj_cfg, env_cfg)
+    ev = EvaluationModule(model_cfg, loss_cfg, eval_cfg, env_cfg)
+
     accepted_count = 0
     traj_count = 0
 
     while accepted_count < remaining_needed and traj_count < max_trajectories:
         traj_count += 1
-        run_state = _run_one_trajectory(state)
+        run_state = _run_one_trajectory(state, traj, ev)
 
         run_dir = _save_run_state(
             output_dir,

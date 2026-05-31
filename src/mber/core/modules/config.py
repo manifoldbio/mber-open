@@ -18,12 +18,14 @@ class BaseTemplateConfig:
     
     # Sequence generation parameters
     plm_model: str = "esm2-650M"
+    plm_force_cpu: bool = True
     sampling_temperature: float = 0.1
     bias_temperature: float = 1.0
     omit_amino_acids: str = "C"
-    
+
     # Structure parameters
     folding_model: str = "esmfold"
+    folding_force_cpu: bool = True
     target_chain: str = "A"
     binder_chain: str = "H"
 
@@ -80,7 +82,8 @@ class BaseTrajectoryConfig:
     early_stop_fraction: float = 0.6
 
     plm_model: str = "esm2-650M"
-    
+    plm_force_cpu: bool = True
+
     # Optimizer configuration
     optimizer_type: Literal["adam", "sgd", "schedule_free_adam", "schedule_free_sgd"] = "sgd"
     optimizer_learning_rate: float = 0.1
@@ -97,8 +100,11 @@ class BaseEvaluationConfig:
     """Base configuration for evaluation."""
     # Add monomer folding model parameter
     monomer_folding_model: str = "esmfold"  # Model to use for monomer folding
+    folding_force_cpu: bool = True
 
     plm_model: str = "esm2-650M"
+    plm_force_cpu: bool = True
+    not_bind_target_positions: Optional[str] = None
 
     # AMBER relax_me parameters
     use_gpu: bool = False

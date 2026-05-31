@@ -60,6 +60,7 @@ class BaseTrajectoryModule(BaseModule):
         self.af_model = None
         self.esm_model = None
         self.pssm_logits = None
+        self._precompile_done = False
 
     @time_method()
     def setup(
@@ -84,9 +85,11 @@ class BaseTrajectoryModule(BaseModule):
         with timer("Setup loss", self._log, design_state.trajectory_data.timings):
             self._setup_loss()
 
-        # Precompile model to avoid JIT delays during design
-        with timer("Precompile model", self._log, design_state.trajectory_data.timings):
-            self._precompile_model()
+        # Precompile model to avoid JIT delays during design (only on first setup)
+        if not self._precompile_done:
+            with timer("Precompile model", self._log, design_state.trajectory_data.timings):
+                self._precompile_model()
+            self._precompile_done = True
 
     @time_method()
     def run(self, design_state: DesignState) -> DesignState:
@@ -177,11 +180,12 @@ class BaseTrajectoryModule(BaseModule):
             )
 
         if self.trajectory_config.update_esm_bias:
+            plm_device = "cpu" if self.trajectory_config.plm_force_cpu else "cuda"
             with timer(
                 "Initialize ESM model", self._log, design_state.trajectory_data.timings
             ):
-                self._log("Initializing ESM model for bias updates")
-                self.esm_model = PLM_MODELS[self.trajectory_config.plm_model](device="cpu")
+                self._log(f"Initializing ESM model for bias updates on {plm_device}")
+                self.esm_model = PLM_MODELS[self.trajectory_config.plm_model](device=plm_device)
 
     def _setup_loss(self) -> None:
         """Setup and configure loss functions."""

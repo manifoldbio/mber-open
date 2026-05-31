@@ -14,7 +14,7 @@ class NBB2Model(ProteinFoldingModel):
     def __init__(
         self,
         model: NanoBodyBuilder2 = None,
-        device: str = "cuda" if torch.cuda.is_available() else "cpu",
+        device: str = "cpu",
         weights_dir: Optional[str] = "~/.mber/nbb2_weights",
     ):
         """Initialize NanoBodyBuilder2 model."""
@@ -23,9 +23,21 @@ class NBB2Model(ProteinFoldingModel):
         os.makedirs(weights_dir, exist_ok=True)
 
         if model is None:
-            model = NanoBodyBuilder2(numbering_scheme='raw', weights_dir=weights_dir)
+            # NanoBodyBuilder2 auto-selects GPU in __init__ (torch.cuda.is_available()),
+            # which OOMs when JAX has pre-allocated most GPU memory. Temporarily
+            # hide CUDA to force CPU loading, then we move the model to self.device.
+            _orig_cuda_available = torch.cuda.is_available
+            torch.cuda.is_available = lambda: False
+            try:
+                model = NanoBodyBuilder2(numbering_scheme='raw', weights_dir=weights_dir)
+            finally:
+                torch.cuda.is_available = _orig_cuda_available
         self.model = model
         self.device = device
+
+        # Move the internal PyTorch model to the specified device.
+        if hasattr(self.model, 'model') and isinstance(self.model.model, torch.nn.Module):
+            self.model.model = self.model.model.to(device)
 
     def predict_structure(
         self,
