@@ -11,6 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# Modified by Manifold Bio for mBER: imports point to mber.models.alphafold;
+# formatting may differ from upstream AlphaFold.
 
 """A Python wrapper for Kalign."""
 import os

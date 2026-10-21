@@ -1,3 +1,6 @@
+# _mutate is adapted from ColabDesign (github.com/sokrypton/ColabDesign @ d024c4e,
+# colabdesign/af/design.py) by Sergey Ovchinnikov, under the Beerware license; see
+# THIRD_PARTY_NOTICES.md.
 from colabdesign.af.design import _af_design
 from colabdesign.shared.utils import softmax, categorical
 import jax

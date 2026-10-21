@@ -1,3 +1,6 @@
+# _prep_binder is adapted from ColabDesign (github.com/sokrypton/ColabDesign @ d024c4e,
+# colabdesign/af/prep.py) by Sergey Ovchinnikov, under the Beerware license; see
+# THIRD_PARTY_NOTICES.md.
 from colabdesign.af.prep import _af_prep, prep_pdb, make_fixed_size, prep_pos, get_multi_id
 
 import numpy as np

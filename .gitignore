@@ -175,6 +175,10 @@ cython_debug/
 
 # model params
 params/
+
+# OpenStructure stereochemical parameters (LGPL-3.0): fetched by download_weights.sh,
+# the Docker build, or on first use; never committed
+src/mber/models/alphafold/common/stereo_chemical_props.txt
 logs/
 output/
 

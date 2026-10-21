@@ -11,6 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# Modified by Manifold Bio for mBER: imports point to mber.models.alphafold, and
+# stereo_chemical_props.txt (OpenStructure, LGPL-3.0) is fetched rather than bundled.
 
 """Constants used in AlphaFold."""
 
@@ -388,6 +391,70 @@ BondAngle = collections.namedtuple(
     ['atom1_name', 'atom2_name', 'atom3name', 'angle_rad', 'stddev'])
 
 
+# stereo_chemical_props.txt is part of OpenStructure (LGPL-3.0), so it is not
+# committed here; like AlphaFold's Dockerfile and OpenFold's install script, we
+# fetch it instead. download_weights.sh puts it in ~/.mber, the Docker build puts
+# it next to this module, and if neither copy exists it is downloaded on first
+# use. MBER_STEREO_CHEMICAL_PROPS overrides the path (e.g. for offline machines).
+# The primary source is ColabFold's byte-identical copy, which ships with
+# OpenStructure's LGPL text, at a pinned commit on GitHub; OpenStructure's own
+# GitLab (the commit AlphaFold and OpenFold use) is the fallback. The checksum
+# guarantees both give the same file.
+_STEREO_CHEMICAL_PROPS_URLS = (
+    'https://raw.githubusercontent.com/sokrypton/ColabFold/'
+    '136bec6375b8f2e13ceaeec76d3320a1590cabc1/colabfold/openstructure/'
+    'stereo_chemical_props.txt',
+    'https://git.scicore.unibas.ch/schwede/openstructure/-/raw/'
+    '7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/'
+    'stereo_chemical_props.txt',
+)
+_STEREO_CHEMICAL_PROPS_SHA256 = (
+    '24510899eeb49167cffedec8fa45363a4d08279c0c637a403b452f7d0ac09451')
+
+
+def _stereo_chemical_props_path() -> str:
+  """Return a local path to stereo_chemical_props.txt, downloading it if needed."""
+  override = os.environ.get('MBER_STEREO_CHEMICAL_PROPS')
+  if override:
+    return override
+  candidates = [
+      os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                   'stereo_chemical_props.txt'),
+      os.path.join(os.path.expanduser('~'), '.mber', 'stereo_chemical_props.txt'),
+  ]
+  import hashlib
+  import urllib.request
+  for path in candidates:
+    if os.path.isfile(path):
+      with open(path, 'rb') as f:
+        if hashlib.sha256(f.read()).hexdigest() == _STEREO_CHEMICAL_PROPS_SHA256:
+          return path
+  dest = candidates[-1]
+  data, errors = None, []
+  for url in _STEREO_CHEMICAL_PROPS_URLS:
+    try:
+      with urllib.request.urlopen(url, timeout=30) as resp:
+        body = resp.read()
+    except OSError as e:
+      errors.append(f'{url}: {e}')
+      continue
+    if hashlib.sha256(body).hexdigest() == _STEREO_CHEMICAL_PROPS_SHA256:
+      data = body
+      break
+    errors.append(f'{url}: checksum mismatch')
+  if data is None:
+    raise FileNotFoundError(
+        'stereo_chemical_props.txt is not installed and could not be '
+        'downloaded (' + '; '.join(errors) + '). Run download_weights.sh, or '
+        'set MBER_STEREO_CHEMICAL_PROPS to a local copy.')
+  os.makedirs(os.path.dirname(dest), exist_ok=True)
+  tmp = f'{dest}.{os.getpid()}.tmp'
+  with open(tmp, 'wb') as f:
+    f.write(data)
+  os.replace(tmp, dest)
+  return dest
+
+
 @functools.lru_cache(maxsize=None)
 def load_stereo_chemical_props() -> Tuple[Mapping[str, List[Bond]],
                                           Mapping[str, List[Bond]],
@@ -403,9 +470,7 @@ def load_stereo_chemical_props() -> Tuple[Mapping[str, List[Bond]],
     residue_virtual_bonds: Dict that maps resname -> list of Bond tuples.
     residue_bond_angles: Dict that maps resname -> list of BondAngle tuples.
   """
-  stereo_chemical_props_path = os.path.join(
-      os.path.dirname(os.path.abspath(__file__)), 'stereo_chemical_props.txt'
-  )
+  stereo_chemical_props_path = _stereo_chemical_props_path()
   with open(stereo_chemical_props_path, 'rt') as f:
     stereo_chemical_props = f.read()
   lines_iter = iter(stereo_chemical_props.splitlines())

@@ -1,3 +1,6 @@
+# The add_rg/i_ptm/helix/termini_distance losses are from BindCraft, Copyright (c) 2024
+# Martin Pacesa, MIT License; the helix loss derives from ColabDesign (Beerware license,
+# Sergey Ovchinnikov). See THIRD_PARTY_NOTICES.md for both notices.
 import numpy as np
 import jax
 import jax.numpy as jnp
@@ -14,6 +17,7 @@ class _mber_af_loss(_af_loss):
 
 ###
 # `add_rg_loss`, `add_i_ptm_loss`, `add_helix_loss`, `add_termini_distance_loss` are adapted from BindCraft: (https://github.com/martinpacesa/BindCraft/blob/main/functions/colabdesign_utils.py)
+# Copyright (c) 2024 Martin Pacesa, MIT License; see THIRD_PARTY_NOTICES.md.
 ###
 
 # Define radius of gyration loss for colabdesign

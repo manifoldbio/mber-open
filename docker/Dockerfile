@@ -39,6 +39,15 @@ WORKDIR /app
 # Copy the entire application (needed for -e . install in environment.yml)
 COPY . .
 
+# OpenStructure's stereo_chemical_props.txt (LGPL-3.0) is not committed; fetch it next
+# to residue_constants.py, as AlphaFold's Dockerfile does: from ColabFold's byte-identical,
+# LGPL-labelled copy at a pinned commit, falling back to OpenStructure's own GitLab.
+# The checksum pins the content.
+RUN cd /app/src/mber/models/alphafold/common/ \
+    && (wget -q -T 30 -t 2 -O stereo_chemical_props.txt https://raw.githubusercontent.com/sokrypton/ColabFold/136bec6375b8f2e13ceaeec76d3320a1590cabc1/colabfold/openstructure/stereo_chemical_props.txt \
+        || wget -q -T 30 -t 2 -O stereo_chemical_props.txt https://git.scicore.unibas.ch/schwede/openstructure/-/raw/7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/stereo_chemical_props.txt) \
+    && echo "24510899eeb49167cffedec8fa45363a4d08279c0c637a403b452f7d0ac09451  /app/src/mber/models/alphafold/common/stereo_chemical_props.txt" | sha256sum -c -
+
 # Create conda environment (includes pip install -e . for mber)
 RUN conda env create -f environment.yml \
     && conda clean -afy

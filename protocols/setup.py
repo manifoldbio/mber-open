@@ -18,7 +18,7 @@ setup(
     description="Optional protocols for mber.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
-    url="https://github.com/manifoldbio/mber",
+    url="https://github.com/manifoldbio/mber-open",
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
