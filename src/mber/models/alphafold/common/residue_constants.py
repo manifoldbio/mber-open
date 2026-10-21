@@ -392,19 +392,20 @@ BondAngle = collections.namedtuple(
 
 
 # stereo_chemical_props.txt is part of OpenStructure (LGPL-3.0), so it is not
-# committed here. Like AlphaFold's Dockerfile and OpenFold's install script, we
-# fetch it from the same pinned OpenStructure commit: download_weights.sh puts it
-# in ~/.mber, the Docker build puts it next to this module, and if neither copy
-# exists it is downloaded on first use. MBER_STEREO_CHEMICAL_PROPS overrides the
-# path (e.g. for offline machines). The second URL is ColabFold's byte-identical,
-# LGPL-labelled copy, used only if OpenStructure's GitLab is unreachable; the
-# checksum guarantees both give the same file.
+# committed here; like AlphaFold's Dockerfile and OpenFold's install script, we
+# fetch it instead. download_weights.sh puts it in ~/.mber, the Docker build puts
+# it next to this module, and if neither copy exists it is downloaded on first
+# use. MBER_STEREO_CHEMICAL_PROPS overrides the path (e.g. for offline machines).
+# The primary source is ColabFold's byte-identical copy, which ships with
+# OpenStructure's LGPL text, at a pinned commit on GitHub; OpenStructure's own
+# GitLab (the commit AlphaFold and OpenFold use) is the fallback. The checksum
+# guarantees both give the same file.
 _STEREO_CHEMICAL_PROPS_URLS = (
-    'https://git.scicore.unibas.ch/schwede/openstructure/-/raw/'
-    '7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/'
-    'stereo_chemical_props.txt',
     'https://raw.githubusercontent.com/sokrypton/ColabFold/'
     '136bec6375b8f2e13ceaeec76d3320a1590cabc1/colabfold/openstructure/'
+    'stereo_chemical_props.txt',
+    'https://git.scicore.unibas.ch/schwede/openstructure/-/raw/'
+    '7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/'
     'stereo_chemical_props.txt',
 )
 _STEREO_CHEMICAL_PROPS_SHA256 = (
@@ -421,12 +422,13 @@ def _stereo_chemical_props_path() -> str:
                    'stereo_chemical_props.txt'),
       os.path.join(os.path.expanduser('~'), '.mber', 'stereo_chemical_props.txt'),
   ]
-  for path in candidates:
-    if os.path.isfile(path):
-      return path
-
   import hashlib
   import urllib.request
+  for path in candidates:
+    if os.path.isfile(path):
+      with open(path, 'rb') as f:
+        if hashlib.sha256(f.read()).hexdigest() == _STEREO_CHEMICAL_PROPS_SHA256:
+          return path
   dest = candidates[-1]
   data, errors = None, []
   for url in _STEREO_CHEMICAL_PROPS_URLS:

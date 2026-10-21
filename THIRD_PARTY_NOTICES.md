@@ -132,8 +132,10 @@ SOFTWARE.
 `stereo_chemical_props.txt` (Engh and Huber bond lengths and angles) is part of
 OpenStructure, which is licensed under the GNU Lesser General Public License v3.0. mBER does
 not include it. Like AlphaFold's Dockerfile and OpenFold's install script, mBER fetches it
-from OpenStructure commit `7102c63615b64735c4941278d92b554ec94415f8` (falling back to
-ColabFold's identical, LGPL-labelled copy) and verifies its SHA-256:
+instead: from ColabFold's byte-identical copy, which ships with OpenStructure's LGPL text
+(https://github.com/sokrypton/ColabFold, commit `136bec6`, `colabfold/openstructure/`),
+falling back to OpenStructure commit `7102c63615b64735c4941278d92b554ec94415f8`, and verifies
+its SHA-256:
 `download_weights.sh` saves it to the weights directory, the Docker build places it next to
 `residue_constants.py`, and otherwise it is downloaded on first use. Set
 `MBER_STEREO_CHEMICAL_PROPS` to use a local copy.

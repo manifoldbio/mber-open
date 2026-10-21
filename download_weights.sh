@@ -211,20 +211,23 @@ echo ""
 # Stereochemical parameters (OpenStructure)
 # ==========================================
 # Bond length/angle table used by AMBER relaxation. It is part of OpenStructure
-# (LGPL-3.0), so mBER fetches it from a pinned commit instead of committing it,
-# as AlphaFold's Dockerfile and OpenFold's install script do.
+# (LGPL-3.0), so mBER fetches it instead of committing it, as AlphaFold's Dockerfile
+# and OpenFold's install script do: from ColabFold's byte-identical copy (which ships
+# with OpenStructure's LGPL text) at a pinned commit, falling back to OpenStructure's
+# own GitLab. The checksum guarantees both give the same file.
 SCP_FILE="${MBER_DIR}/stereo_chemical_props.txt"
-SCP_URL="https://git.scicore.unibas.ch/schwede/openstructure/-/raw/7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/stereo_chemical_props.txt"
-SCP_MIRROR="https://raw.githubusercontent.com/sokrypton/ColabFold/136bec6375b8f2e13ceaeec76d3320a1590cabc1/colabfold/openstructure/stereo_chemical_props.txt"
+SCP_URL="https://raw.githubusercontent.com/sokrypton/ColabFold/136bec6375b8f2e13ceaeec76d3320a1590cabc1/colabfold/openstructure/stereo_chemical_props.txt"
+SCP_FALLBACK="https://git.scicore.unibas.ch/schwede/openstructure/-/raw/7102c63615b64735c4941278d92b554ec94415f8/modules/mol/alg/src/stereo_chemical_props.txt"
 SCP_SHA256="24510899eeb49167cffedec8fa45363a4d08279c0c637a403b452f7d0ac09451"
 
 echo "Stereochemical parameters (OpenStructure, LGPL-3.0)"
 echo "----------------------------------------"
-if [ -f "${SCP_FILE}" ]; then
+if [ -f "${SCP_FILE}" ] && echo "${SCP_SHA256}  ${SCP_FILE}" | sha256sum -c --quiet - 2>/dev/null; then
     echo "✓ stereo_chemical_props.txt already exists"
 else
-    # ColabFold's byte-identical copy is the fallback if OpenStructure's GitLab is down.
-    wget -q -T 30 -t 2 -O "${SCP_FILE}" "${SCP_URL}" || wget -q -T 30 -O "${SCP_FILE}" "${SCP_MIRROR}"
+    if ! { wget -q -T 30 -t 2 -O "${SCP_FILE}" "${SCP_URL}" || wget -q -T 30 -t 2 -O "${SCP_FILE}" "${SCP_FALLBACK}"; }; then
+        rm -f "${SCP_FILE}"; echo "✗ could not download stereo_chemical_props.txt"; exit 1
+    fi
     echo "${SCP_SHA256}  ${SCP_FILE}" | sha256sum -c --quiet - \
         || { rm -f "${SCP_FILE}"; echo "✗ checksum mismatch for stereo_chemical_props.txt"; exit 1; }
     echo "✓ stereo_chemical_props.txt installed"
