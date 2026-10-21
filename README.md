@@ -83,7 +83,9 @@ See the [notebooks](./notebooks) for examples of how to use mber in a notebook e
 
 ## License
 
-MIT License - See the LICENSE file for details.
+MIT License - See the LICENSE file for details. Code adapted from other projects stays under its
+original license: notably `src/mber/models/alphafold/` is Apache-2.0 (DeepMind). See
+[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for all third-party code, dependencies and model weights.
 
 ## Contributing
 
@@ -110,8 +112,11 @@ If you use this code in your research, please cite our paper:
 ## Acknowledgements
 
 This project builds on several open-source tools and models:
-- [AlphaFold](https://github.com/deepmind/alphafold)
+- [AlphaFold](https://github.com/google-deepmind/alphafold)
 - [ColabDesign](https://github.com/sokrypton/ColabDesign)
+- [ColabFold](https://github.com/sokrypton/ColabFold)
+- [BindCraft](https://github.com/martinpacesa/BindCraft)
+- [OpenStructure](https://git.scicore.unibas.ch/schwede/openstructure) (stereochemical parameters, downloaded at install time)
 - [ESM](https://github.com/facebookresearch/esm)
 - [AbLang](https://github.com/oxpig/AbLang)
 - [ImmuneBuilder](https://github.com/oxpig/ImmuneBuilder)

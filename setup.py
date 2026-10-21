@@ -16,7 +16,10 @@ setup(
     description="Manifold Binder Engineering and Refinement. A package for format-specific protein binder design.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
-    url="https://github.com/manifoldbio/mber",
+    url="https://github.com/manifoldbio/mber-open",
+    # Ship mBER's license, the third-party notices, and AlphaFold's Apache-2.0 license
+    # with every built distribution.
+    license_files=["LICENSE", "THIRD_PARTY_NOTICES.md", "src/mber/models/alphafold/LICENSE"],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",

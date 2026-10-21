@@ -11,6 +11,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+# Modified by Manifold Bio for mBER: imports point to mber.models.alphafold, and
+# _openmm_minimize passes the tolerance in the units OpenMM >= 8.4 expects.
 
 """Restrained Amber Minimization of a structure."""
 

@@ -1,3 +1,7 @@
+# Adapted from ColabFold (github.com/sokrypton/ColabFold, colabfold/relax.py).
+# Copyright (c) 2021 Sergey Ovchinnikov. MIT License; see THIRD_PARTY_NOTICES.md.
+# Modified by Manifold Bio: import paths, and relax_me returns all relax data.
+
 from pathlib import Path
 
 def relax_me(
